@@ -108,5 +108,85 @@
       this.reset();
     });
   </script>
+  <script>
+  const SUPABASE_URL = "https://jwebaerikvvdaxyagkpx.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3ZWJhZXJpa3Z2ZGF4eWFna3B4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUwMTEzNjMsImV4cCI6MjA3MDU4NzM2M30.mMC9F8sIovTE4r1HXKYXL8c9SexagzEqK6s_ErZ3fiI";
+
+  const form = document.getElementById('lead');
+  const ok = document.getElementById('ok');
+
+  // 👀 zone debug
+  const debug = document.createElement('pre');
+  debug.style.background = '#f3f4f6';
+  debug.style.padding = '8px';
+  debug.style.fontSize = '12px';
+  debug.style.whiteSpace = 'pre-wrap';
+  debug.textContent = 'Debug prêt…';
+  document.body.appendChild(debug);
+
+  // 👇 Affiche les 5 derniers leads
+  async function loadLeads() {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/leads?select=prenom,nom,created_at&order=created_at.desc&limit=5`, {
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        }
+      });
+      const txt = await res.text();
+      debug.textContent = `GET /leads status=${res.status}\n${txt}`;
+    } catch (e) {
+      debug.textContent = `GET /leads erreur réseau: ${e?.message || e}`;
+    }
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const fd = new FormData(form);
+    const payload = {
+      prenom: (fd.get('prenom') || '').toString(),
+      nom: (fd.get('nom') || '').toString(),
+      telephone: (fd.get('telephone') || '').toString(),
+      email: (fd.get('email') || '').toString(),
+      proprietaire: (fd.get('proprietaire') || '').toString(),
+      toiture: (fd.get('toiture') || '').toString(),
+      interesse_60: !!fd.get('interesse_60'),
+    };
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/leads`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const txt = await res.text();
+      if (!res.ok) {
+        alert("Erreur Supabase: " + txt);
+        debug.textContent = `POST /leads status=${res.status}\n${txt}`;
+        return;
+      }
+
+      ok.style.display = 'block';
+      form.reset();
+      debug.textContent = `POST /leads status=${res.status}\n${txt}`;
+
+      // Recharge la liste après insertion
+      await loadLeads();
+    } catch (err) {
+      alert('Erreur réseau: ' + (err?.message || err));
+      debug.textContent = `POST /leads erreur réseau: ${err?.message || err}`;
+    }
+  });
+
+  // Charge la liste au démarrage
+  loadLeads();
+</script>
 </body>
 </html>
