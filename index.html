@@ -3,20 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Freesolar — Réduction énergétique</title>
+  <title>Freesolar — Étude solaire</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root { --blue:#0A2342; --yellow:#FFD100; --bg:#F7F9FC; --text:#111827; }
     *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text)}
     header{background:var(--blue);color:#fff;padding:20px} .wrap{max-width:980px;margin:0 auto;padding:0 16px}
     .brand{display:flex;align-items:center;gap:12px} .logo{width:40px;height:40px;border-radius:8px;background:linear-gradient(135deg,var(--yellow),#fff380);display:flex;align-items:center;justify-content:center;color:var(--blue);font-weight:900}
     .hero{background:#fff;margin:24px auto;padding:24px;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.06)}
-    h1{font-size:32px;margin:0 0 6px} p.lead{margin:0;opacity:.8}
+    h1{font-size:28px;margin:0 0 6px} p.lead{margin:0;opacity:.8}
     .grid{display:grid;grid-template-columns:1fr;gap:16px;margin-top:16px}@media(min-width:860px){.grid{grid-template-columns:1fr 1fr}}
     .card{background:#fff;padding:20px;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.06)}
     label{display:block;font-size:14px;margin-bottom:6px} input,select,button{width:100%;padding:12px;border:1px solid #E5E7EB;border-radius:10px;font-size:16px}
-    input[type="checkbox"]{width:auto;transform:scale(1.1);accent-color:var(--yellow)}
-    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px} button{background:var(--yellow);color:var(--blue);font-weight:800;border:none;cursor:pointer}
-    button:hover{filter:brightness(.95)} .tel{font-weight:700;color:var(--yellow)} footer{text-align:center;font-size:12px;color:#6B7280;padding:32px 0}
+    input[type="checkbox"]{width:auto;transform:scale(1.1);accent-color:var(--yellow)} .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    button{background:var(--yellow);color:var(--blue);font-weight:800;border:none;cursor:pointer} button:hover{filter:brightness(.95)}
+    .tel{font-weight:700;color:var(--yellow)} .ok{display:none;color:#059669;font-weight:700;margin-top:10px}
+    footer{text-align:center;font-size:12px;color:#6B7280;padding:32px 0}
   </style>
 </head>
 <body>
@@ -34,35 +36,22 @@
   <main class="wrap">
     <section class="hero">
       <h1>Obtenez votre étude solaire en 2 minutes</h1>
-      <p class="lead">Dites‑nous qui vous êtes et si votre toiture est adaptée. Un conseiller vous rappelle.</p>
+      <p class="lead">Un conseiller vous rappelle après vérification de votre éligibilité.</p>
       <div class="grid">
+        <!-- FORMULAIRE -->
         <form class="card" id="lead">
           <div class="row">
-            <div>
-              <label>Prénom</label>
-              <input name="prenom" required placeholder="Jean" />
-            </div>
-            <div>
-              <label>Nom</label>
-              <input name="nom" required placeholder="Dupont" />
-            </div>
+            <div><label>Prénom</label><input name="prenom" required /></div>
+            <div><label>Nom</label><input name="nom" required /></div>
           </div>
           <div class="row">
-            <div>
-              <label>Téléphone</label>
-              <input name="telephone" required placeholder="06..." />
-            </div>
-            <div>
-              <label>E‑mail</label>
-              <input type="email" name="email" required placeholder="vous@exemple.fr" />
-            </div>
+            <div><label>Téléphone</label><input name="telephone" required placeholder="06..." /></div>
+            <div><label>E‑mail</label><input type="email" name="email" required placeholder="vous@exemple.fr" /></div>
           </div>
           <div>
             <label>Êtes‑vous propriétaire de votre maison ?</label>
             <select name="proprietaire" required>
-              <option value="">—</option>
-              <option>Oui</option>
-              <option>Non</option>
+              <option value="">—</option><option>Oui</option><option>Non</option>
             </select>
           </div>
           <div>
@@ -80,16 +69,17 @@
             Je suis intéressé par une réduction énergétique <b>jusqu’à 60%</b>
           </label>
           <button type="submit">Recevoir mon étude</button>
-          <p id="ok" style="display:none;color:#059669;font-weight:700;margin-top:10px">✅ Merci ! Nous vous rappelons très vite.</p>
+          <p class="ok" id="ok">✅ Merci ! Nous vous rappelons très vite.</p>
         </form>
 
+        <!-- EXPLICATIONS -->
         <div class="card">
           <h3 style="margin-top:0">Comment ça marche ?</h3>
           <ol>
             <li>Vous complétez le formulaire.</li>
             <li>Un téléconseiller vérifie votre éligibilité.</li>
             <li>Étude technique à distance + devis.</li>
-            <li>Signature électronique sécurisée.</li>
+            <li>Signature électronique.</li>
             <li>Installation par un partenaire RGE.</li>
           </ol>
           <p style="margin-top:12px;font-size:14px;opacity:.8">C’est gratuit et sans engagement.</p>
@@ -100,93 +90,70 @@
 
   <footer>© 2025 Freesolar — Tous droits réservés.</footer>
 
+  <!-- SCRIPT SUPABASE + DEBUG -->
   <script>
-    // Action simple: affiche "OK", sans backend (on branchera Supabase ensuite)
-    document.getElementById('lead').addEventListener('submit', function(e){
-      e.preventDefault();
-      document.getElementById('ok').style.display = 'block';
-      this.reset();
-    });
+    // ⚙️ Remplace ces 2 constantes si besoin
+    const SUPABASE_URL = "https://jwebaerikvvdaxyagkpx.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3ZWJhZXJpa3Z2ZGF4eWFna3B4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUwMTEzNjMsImV4cCI6MjA3MDU4NzM2M30.mMC9F8sIovTE4r1HXKYXL8c9SexagzEqK6s_ErZ3fiI";
   </script>
   <script>
-  const SUPABASE_URL = "https://jwebaerikvvdaxyagkpx.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3ZWJhZXJpa3Z2ZGF4eWFna3B4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUwMTEzNjMsImV4cCI6MjA3MDU4NzM2M30.mMC9F8sIovTE4r1HXKYXL8c9SexagzEqK6s_ErZ3fiI";
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  const form = document.getElementById('lead');
-  const ok = document.getElementById('ok');
+    const form = document.getElementById('lead');
+    const ok = document.getElementById('ok');
 
-  // 👀 zone debug
-  const debug = document.createElement('pre');
-  debug.style.background = '#f3f4f6';
-  debug.style.padding = '8px';
-  debug.style.fontSize = '12px';
-  debug.style.whiteSpace = 'pre-wrap';
-  debug.textContent = 'Debug prêt…';
-  document.body.appendChild(debug);
+    // Bloc debug lisible en bas de page
+    const debug = document.createElement('pre');
+    debug.style.background = '#f3f4f6';
+    debug.style.padding = '8px';
+    debug.style.fontSize = '12px';
+    debug.style.whiteSpace = 'pre-wrap';
+    debug.textContent = 'Debug prêt…';
+    document.body.appendChild(debug);
 
-  // 👇 Affiche les 5 derniers leads
-  async function loadLeads() {
-    try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/leads?select=prenom,nom,created_at&order=created_at.desc&limit=5`, {
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-        }
-      });
-      const txt = await res.text();
-      debug.textContent = `GET /leads status=${res.status}\n${txt}`;
-    } catch (e) {
-      debug.textContent = `GET /leads erreur réseau: ${e?.message || e}`;
+    // Afficher 5 derniers leads
+    async function loadLeads() {
+      const { data, error, status } = await sb
+        .from('leads')
+        .select('prenom,nom,created_at')
+        .order('created_at', { ascending: false })
+        .limit(5);
+      debug.textContent = `GET leads status=${status}\n` +
+        (error ? `ERROR: ${error.message}` : JSON.stringify(data, null, 2));
     }
-  }
 
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(form);
+      const payload = {
+        prenom: String(fd.get('prenom') || ''),
+        nom: String(fd.get('nom') || ''),
+        telephone: String(fd.get('telephone') || ''),
+        email: String(fd.get('email') || ''),
+        proprietaire: String(fd.get('proprietaire') || ''),
+        toiture: String(fd.get('toiture') || ''),
+        interesse_60: !!fd.get('interesse_60'),
+      };
 
-    const fd = new FormData(form);
-    const payload = {
-      prenom: (fd.get('prenom') || '').toString(),
-      nom: (fd.get('nom') || '').toString(),
-      telephone: (fd.get('telephone') || '').toString(),
-      email: (fd.get('email') || '').toString(),
-      proprietaire: (fd.get('proprietaire') || '').toString(),
-      toiture: (fd.get('toiture') || '').toString(),
-      interesse_60: !!fd.get('interesse_60'),
-    };
+      const { data, error, status } = await sb
+        .from('leads')
+        .insert([payload])
+        .select(); // renvoie la ligne insérée
 
-    try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/leads`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'Prefer': 'return=representation'
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const txt = await res.text();
-      if (!res.ok) {
-        alert("Erreur Supabase: " + txt);
-        debug.textContent = `POST /leads status=${res.status}\n${txt}`;
+      if (error) {
+        alert("Erreur Supabase : " + error.message);
+        debug.textContent = `POST leads status=${status}\nERROR: ${error.message}`;
         return;
       }
 
       ok.style.display = 'block';
       form.reset();
-      debug.textContent = `POST /leads status=${res.status}\n${txt}`;
+      debug.textContent = `POST leads status=${status}\n` + JSON.stringify(data, null, 2);
+      loadLeads();
+    });
 
-      // Recharge la liste après insertion
-      await loadLeads();
-    } catch (err) {
-      alert('Erreur réseau: ' + (err?.message || err));
-      debug.textContent = `POST /leads erreur réseau: ${err?.message || err}`;
-    }
-  });
-
-  // Charge la liste au démarrage
-  loadLeads();
-</script>
+    // Chargement initial
+    loadLeads();
+  </script>
 </body>
 </html>
