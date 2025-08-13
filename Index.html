@@ -7,18 +7,27 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root { --blue:#0A2342; --yellow:#FFD100; --bg:#F7F9FC; --text:#111827; }
-    *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text)}
-    header{background:var(--blue);color:#fff;padding:20px} .wrap{max-width:980px;margin:0 auto;padding:0 16px}
-    .brand{display:flex;align-items:center;gap:12px} .logo{width:40px;height:40px;border-radius:8px;background:linear-gradient(135deg,var(--yellow),#fff380);display:flex;align-items:center;justify-content:center;color:var(--blue);font-weight:900}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text)}
+    header{background:var(--blue);color:#fff;padding:20px}
+    .wrap{max-width:980px;margin:0 auto;padding:0 16px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{width:40px;height:40px;border-radius:8px;background:linear-gradient(135deg,var(--yellow),#fff380);display:flex;align-items:center;justify-content:center;color:var(--blue);font-weight:900}
     .hero{background:#fff;margin:24px auto;padding:24px;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.06)}
     h1{font-size:28px;margin:0 0 6px} p.lead{margin:0;opacity:.8}
-    .grid{display:grid;grid-template-columns:1fr;gap:16px;margin-top:16px}@media(min-width:860px){.grid{grid-template-columns:1fr 1fr}}
+    .grid{display:grid;grid-template-columns:1fr;gap:16px;margin-top:16px}
+    @media(min-width:860px){.grid{grid-template-columns:1fr 1fr}}
     .card{background:#fff;padding:20px;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.06)}
-    label{display:block;font-size:14px;margin-bottom:6px} input,select,button{width:100%;padding:12px;border:1px solid #E5E7EB;border-radius:10px;font-size:16px}
-    input[type="checkbox"]{width:auto;transform:scale(1.1);accent-color:var(--yellow)} .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    button{background:var(--yellow);color:var(--blue);font-weight:800;border:none;cursor:pointer} button:hover{filter:brightness(.95)}
-    .tel{font-weight:700;color:var(--yellow)} .ok{display:none;color:#059669;font-weight:700;margin-top:10px}
+    label{display:block;font-size:14px;margin-bottom:6px}
+    input,select,button{width:100%;padding:12px;border:1px solid #E5E7EB;border-radius:10px;font-size:16px}
+    input[type="checkbox"]{width:auto;transform:scale(1.1);accent-color:var(--yellow)}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    button{background:var(--yellow);color:var(--blue);font-weight:800;border:none;cursor:pointer}
+    button:hover{filter:brightness(.95)}
+    .tel{font-weight:700;color:var(--yellow)}
+    .ok{display:none;color:#059669;font-weight:700;margin-top:10px}
     footer{text-align:center;font-size:12px;color:#6B7280;padding:32px 0}
+    pre.debug{background:#f3f4f6;padding:8px;border-radius:8px;font-size:12px;white-space:pre-wrap}
   </style>
 </head>
 <body>
@@ -86,45 +95,55 @@
         </div>
       </div>
     </section>
+
+    <!-- BLOC DEBUG -->
+    <section class="card">
+      <h3 style="margin-top:0">Bloc Debug (lecture & écriture Supabase)</h3>
+      <pre id="debug" class="debug">Debug prêt…</pre>
+      <ul id="last5"></ul>
+    </section>
   </main>
 
   <footer>© 2025 Freesolar — Tous droits réservés.</footer>
 
-  <!-- SCRIPT SUPABASE + DEBUG -->
+  <!-- SCRIPT SUPABASE -->
   <script>
-    // ⚙️ Remplace ces 2 constantes si besoin
+    // ⚙️ Ton projet Supabase
     const SUPABASE_URL = "https://jwebaerikvvdaxyagkpx.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3ZWJhZXJpa3Z2ZGF4eWFna3B4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUwMTEzNjMsImV4cCI6MjA3MDU4NzM2M30.mMC9F8sIovTE4r1HXKYXL8c9SexagzEqK6s_ErZ3fiI";
-  </script>
-  <script>
+
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const debugEl = document.getElementById('debug');
+    const listEl = document.getElementById('last5');
 
-    const form = document.getElementById('lead');
-    const ok = document.getElementById('ok');
+    function logDebug(obj) {
+      debugEl.textContent = JSON.stringify({
+        supabaseUrl_present: !!SUPABASE_URL,
+        supabaseKey_present: !!SUPABASE_ANON_KEY,
+        ...obj
+      }, null, 2);
+    }
 
-    // Bloc debug lisible en bas de page
-    const debug = document.createElement('pre');
-    debug.style.background = '#f3f4f6';
-    debug.style.padding = '8px';
-    debug.style.fontSize = '12px';
-    debug.style.whiteSpace = 'pre-wrap';
-    debug.textContent = 'Debug prêt…';
-    document.body.appendChild(debug);
-
-    // Afficher 5 derniers leads
     async function loadLeads() {
       const { data, error, status } = await sb
         .from('leads')
-        .select('prenom,nom,created_at')
+        .select('prenom,nom,email,created_at')
         .order('created_at', { ascending: false })
         .limit(5);
-      debug.textContent = `GET leads status=${status}\n` +
-        (error ? `ERROR: ${error.message}` : JSON.stringify(data, null, 2));
+
+      logDebug({ get_status: status, get_error: error?.message || null, rows: data?.length || 0 });
+
+      listEl.innerHTML = '';
+      (data || []).forEach((l) => {
+        const li = document.createElement('li');
+        li.textContent = `${l.prenom || ''} ${l.nom || ''} — ${l.email || ''} (${new Date(l.created_at).toLocaleString()})`;
+        listEl.appendChild(li);
+      });
     }
 
-    form.addEventListener('submit', async (e) => {
+    document.getElementById('lead').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const fd = new FormData(form);
+      const fd = new FormData(e.target);
       const payload = {
         prenom: String(fd.get('prenom') || ''),
         nom: String(fd.get('nom') || ''),
@@ -138,18 +157,15 @@
       const { data, error, status } = await sb
         .from('leads')
         .insert([payload])
-        .select(); // renvoie la ligne insérée
+        .select();
 
       if (error) {
         alert("Erreur Supabase : " + error.message);
-        debug.textContent = `POST leads status=${status}\nERROR: ${error.message}`;
-        return;
       }
 
-      ok.style.display = 'block';
-      form.reset();
-      debug.textContent = `POST leads status=${status}\n` + JSON.stringify(data, null, 2);
-      loadLeads();
+      document.getElementById('ok').style.display = error ? 'none' : 'block';
+      logDebug({ post_status: status, post_error: error?.message || null, inserted: data });
+      if (!error) { e.target.reset(); await loadLeads(); }
     });
 
     // Chargement initial
