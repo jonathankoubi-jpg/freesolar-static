@@ -171,5 +171,56 @@
     // Chargement initial
     loadLeads();
   </script>
+ <!-- ⚠️ BLOC DEBUG COLLER ICI -->
+<div style="max-width:980px;margin:12px auto;padding:12px;background:#fff;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.06)">
+  <h3 style="margin:0 0 8px">Debug Supabase</h3>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+    <button id="testSelect">Tester SELECT</button>
+    <button id="testInsert">Tester INSERT</button>
+  </div>
+  <pre id="dbg" style="background:#f3f4f6;padding:10px;border-radius:8px;font-size:12px;white-space:pre-wrap">Prêt…</pre>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // ✅ Mets bien TES valeurs
+  const SUPABASE_URL = "https://jwebaerikvvdaxyagkpx.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3ZWJhZXJpa3Z2ZGF4eWFna3B4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUwMTEzNjMsImV4cCI6MjA3MDU4NzM2M30.mMC9F8sIovTE4r1HXKYXL8c9SexagzEqK6s_ErZ3fiI";
+
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const dbg = document.getElementById('dbg');
+  const log = (o) => dbg.textContent = JSON.stringify(o, null, 2);
+
+  // SELECT explicite sur le schéma public
+  async function testSelect() {
+    const { data, error, status } = await sb
+      .schema('public')
+      .from('leads')
+      .select('id, prenom, nom, created_at')
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    log({ step: 'SELECT public.leads', status, error: error?.message || null, rows: data?.length || 0, data });
+  }
+
+  // INSERT minimal
+  async function testInsert() {
+    const { data, error, status } = await sb
+      .schema('public')
+      .from('leads')
+      .insert([{ prenom: 'Test', nom: 'Debug', email: 'debug@example.com' }])
+      .select();
+
+    log({ step: 'INSERT public.leads', status, error: error?.message || null, data });
+    if (!error) await testSelect();
+  }
+
+  document.getElementById('testSelect').onclick = testSelect;
+  document.getElementById('testInsert').onclick = testInsert;
+
+  // charge au démarrage
+  testSelect();
+</script>
+<!-- /BLOC DEBUG --> 
 </body>
 </html>
